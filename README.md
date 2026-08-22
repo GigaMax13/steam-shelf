@@ -7,37 +7,43 @@ Quickly see all your Steam games and non-Steam shortcuts from the terminal.
 ```
 $ ./run.sh
 
-                              Steam Games (Proton/Compatdata)
-┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃   App ID ┃ Name                                        ┃ Path                     ┃
-┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│   292030 │ The Witcher 3: Wild Hunt                    │ ~/.../compatdata/292030/  │
-│          │ https://store.steampowered.com/app/292030   │                          │
-│  1091500 │ Cyberpunk 2077                              │ ~/.../compatdata/1091500/ │
-│          │ https://store.steampowered.com/app/1091500  │                          │
-│  1245620 │ Elden Ring                                  │ ~/.../compatdata/1245620/ │
-│          │ https://store.steampowered.com/app/1245620  │                          │
-└──────────┴─────────────────────────────────────────────┴──────────────────────────┘
-                               3 games found
+                                  Steam Games
+┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃   App ID ┃ Name                                       ┃ Install Path               ┃ Prefix                        ┃
+┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   292030 │ The Witcher 3: Wild Hunt                   │ ~/.local/share/Steam/stea… │ ~/.local/share/Steam/steama…  │
+│          │ https://store.steampowered.com/app/292030  │                            │                               │
+│  1091500 │ Cyberpunk 2077                             │ /mnt/games/SteamLibrary/s… │ /mnt/games/SteamLibrary/ste…  │
+│          │ https://store.steampowered.com/app/1091500 │                            │                               │
+│  1245620 │ Elden Ring                                 │ /mnt/games/SteamLibrary/s… │ N/A                           │
+│          │ https://store.steampowered.com/app/1245620 │                            │                               │
+└──────────┴────────────────────────────────────────────┴────────────────────────────┴───────────────────────────────┘
+                                 3 games found
 
                               Non-Steam Shortcuts
-┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃     App ID ┃ Name                  ┃ Path                        ┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     App ID ┃ Name                  ┃ Prefix                       ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ 2837212789 │ Heroic Games Launcher │ ~/.../compatdata/2837212789/ │
 │ 3914207643 │ Lutris                │ ~/.../compatdata/3914207643/ │
-└────────────┴───────────────────────┴─────────────────────────────┘
+└────────────┴───────────────────────┴──────────────────────────────┘
                         User: 12345678
 ```
 
 ## Features
 
-- Lists installed Steam games running under Proton (with compatdata)
+- Lists every installed Steam game across **all** library folders (extra drives
+  and external disks listed in `libraryfolders.vdf`), not just the default one
 - Lists non-Steam shortcuts per user profile
-- Shows app IDs, compatdata paths, and Steam store page links
+- Shows app IDs, install paths, Steam store page links, and how each app runs
+  (`Runtime`: the configured Proton/compat tool, `Steam default`, or `Native`)
+- Reports a Proton prefix only when it is real — Steam leaves behind empty
+  `compatdata/<appid>/` stubs that contain no `pfx/`
+- Hides Valve runtimes and compatibility tools (Proton, Steam Linux Runtime,
+  Steamworks Common Redistributables)
 - Formatted terminal tables via [Rich](https://github.com/Textualize/rich)
 - Multi-user support (iterates all profiles under `userdata/`)
-- Graceful handling of malformed VDF files
+- Graceful handling of malformed VDF files and missing library folders
 
 ## Requirements
 
