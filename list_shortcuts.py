@@ -1,6 +1,12 @@
+from __future__ import annotations
+
+import argparse
 import logging
+import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Mapping, Optional
 
 import vdf
 from rich.console import Console
@@ -8,10 +14,6 @@ from rich.table import Table
 
 logger = logging.getLogger(__name__)
 
-STEAM_DIR = Path.home() / ".local" / "share" / "Steam"
-STEAM_USERDATA = STEAM_DIR / "userdata"
-STEAM_CONFIG = STEAM_DIR / "config" / "config.vdf"
-STEAM_APPS = STEAM_DIR / "steamapps"
 STEAM_GAME_PAGE = "https://store.steampowered.com/app"
 
 # Valve compatibility tools / runtimes are installed as regular apps but are
@@ -21,6 +23,63 @@ TOOL_NAME_PREFIXES = (
     "steam linux runtime",
     "steamworks common redistributables",
 )
+
+
+def candidate_steam_dirs(
+    home: Path, env: Mapping[str, str], explicit: Optional[str] = None
+) -> list[Path]:
+    """Every place Steam may live, most specific first.
+
+    Covers the native install on any distro (Debian/Ubuntu symlinks under
+    ``~/.steam``), Flatpak, Snap and a custom ``STEAM_DIR``.
+    """
+    candidates: list[Path] = []
+    if explicit:
+        candidates.append(Path(explicit).expanduser())
+    if env.get("STEAM_DIR"):
+        candidates.append(Path(env["STEAM_DIR"]).expanduser())
+    if env.get("XDG_DATA_HOME"):
+        candidates.append(Path(env["XDG_DATA_HOME"]) / "Steam")
+    flatpak = home / ".var" / "app" / "com.valvesoftware.Steam"
+    candidates += [
+        home / ".local" / "share" / "Steam",
+        home / ".steam" / "steam",
+        home / ".steam" / "root",
+        home / ".steam" / "debian-installation",
+        flatpak / ".local" / "share" / "Steam",
+        flatpak / "data" / "Steam",
+        home / "snap" / "steam" / "common" / ".local" / "share" / "Steam",
+    ]
+    return candidates
+
+
+def find_steam_dir(
+    home: Optional[Path] = None,
+    env: Optional[Mapping[str, str]] = None,
+    explicit: Optional[str] = None,
+) -> Optional[Path]:
+    """Return the first candidate that actually looks like a Steam install."""
+    home = Path.home() if home is None else home
+    env = os.environ if env is None else env
+    for path in candidate_steam_dirs(home, env, explicit):
+        if (path / "steamapps").is_dir() or (path / "userdata").is_dir():
+            return path
+    return None
+
+
+def not_found_message(
+    home: Optional[Path] = None, env: Optional[Mapping[str, str]] = None
+) -> str:
+    home = Path.home() if home is None else home
+    env = os.environ if env is None else env
+    searched = "\n".join(f"  {p}" for p in candidate_steam_dirs(home, env))
+    return (
+        "Could not find a Steam installation. Looked in:\n"
+        f"{searched}\n\n"
+        "Start Steam once so it creates its folders, or point this tool at "
+        "your install:\n"
+        "  STEAM_DIR=/path/to/Steam <command>   (or use --steam-dir PATH)"
+    )
 
 
 @dataclass
@@ -302,13 +361,28 @@ def display_shortcuts(user_shortcuts_list: list[UserShortcuts]) -> None:
         console.print(table)
 
 
-def main() -> None:
+def main(argv: Optional[list[str]] = None) -> None:
     logging.basicConfig(level=logging.WARNING)
 
-    compat_tools = load_compat_tools(STEAM_CONFIG)
+    parser = argparse.ArgumentParser(
+        description="List your Steam games and non-Steam shortcuts."
+    )
+    parser.add_argument(
+        "--steam-dir",
+        help="Steam install folder (default: auto-detect, or $STEAM_DIR)",
+    )
+    args = parser.parse_args(argv)
+
+    steam_dir = find_steam_dir(explicit=args.steam_dir)
+    if steam_dir is None:
+        print(not_found_message(), file=sys.stderr)
+        sys.exit(1)
+
+    steamapps = steam_dir / "steamapps"
+    compat_tools = load_compat_tools(steam_dir / "config" / "config.vdf")
 
     user_shortcuts_list = load_user_shortcuts(
-        STEAM_USERDATA, STEAM_APPS, compat_tools
+        steam_dir / "userdata", steamapps, compat_tools
     )
 
     shortcut_appids: set[int] = set()
@@ -317,7 +391,7 @@ def main() -> None:
             if shortcut.appid is not None:
                 shortcut_appids.add(shortcut.appid)
 
-    libraries = load_libraries(STEAM_APPS)
+    libraries = load_libraries(steamapps)
     games = load_steam_games(libraries, shortcut_appids, compat_tools)
     display_steam_games(games)
     display_shortcuts(user_shortcuts_list)
