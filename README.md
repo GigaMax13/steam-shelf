@@ -82,6 +82,32 @@ curl -fsSL https://raw.githubusercontent.com/gigamax13/steam-shelf/main/steam-sh
 `~/.local/share/Steam`, `~/.steam/steam`, `~/.steam/root`,
 `~/.steam/debian-installation`, Flatpak, Snap, and `$XDG_DATA_HOME/Steam`.
 
+## Find a game's folder (example: WoW + WowUp)
+
+Some tools ask for a game's folder (addon managers such as WowUp, mod
+managers, trainers), and games run through Proton keep it buried inside a
+Wine prefix. steam-shelf shows where it is:
+
+1. Run steam-shelf (see Quick start). Widen the terminal first: long paths
+   are cut with `…` when the window is too narrow.
+2. Find the game:
+   - **Installed from Steam:** look in **Steam Games**. *Install Path* is the
+     library, and *Prefix* is the Proton prefix when the game has one.
+   - **Installed through another launcher** (for example Battle.net for World
+     of Warcraft, added to Steam as a non-Steam shortcut): look in
+     **Non-Steam Shortcuts** and copy the *Prefix*.
+3. The Windows `C:` drive of a prefix is `<prefix>/pfx/drive_c/`. For WoW:
+
+   ```
+   <prefix>/pfx/drive_c/Program Files (x86)/World of Warcraft/
+   ```
+
+   For WoW: Forever, the game itself is in the `_forever_` folder inside it
+   (`_forever_/Wow.exe`).
+4. In the tool's folder picker, paste that path. `~` and `.local` are hidden
+   or may not be expanded: press `Ctrl+H` in the picker to show hidden
+   folders, or replace `~` with your home path.
+
 ## Developer setup
 
 ```sh
